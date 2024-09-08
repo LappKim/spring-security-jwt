@@ -64,7 +64,7 @@ public class ReissueController {
         }
         // 토큰이 refresh인지 확인 (발급시 페이로드에 명시)
         String category = this.jwtComponent.getCategory(refreshToken);
-
+        log.trace("category [{}]", category);
         if (refresh.equals(category) == false) {
             log.error("invalid refresh token");
             //response status code
