@@ -76,7 +76,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         // 10분 10분 * 60초 * 1000 밀리초 = 600000
         String accessToken  = this.jwtComponent.createJwtAccess(username, role);
         // 24시간 24시간 * 60분 * 60초 * 1000 밀리초 = 86400000
-        String refreshToken = this.jwtComponent.createJwtAccess(username, role);
+        String refreshToken = this.jwtComponent.createJwtRefresh(username, role);
 
         log.trace("accessToken               = [{}]", accessToken);
         log.trace("refreshToken              = [{}]", refreshToken);
