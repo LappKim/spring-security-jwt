@@ -3,7 +3,6 @@ package com.slowstarter.filter;
 import java.util.Collection;
 import java.util.Iterator;
 
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,6 +13,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.slowstarter.component.JwtComponent;
 import com.slowstarter.dto.CustomUserDetails;
+import com.slowstarter.service.RefreshTokenService;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,9 +24,11 @@ import lombok.extern.slf4j.Slf4j;
 public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     private final AuthenticationManager authenticationManager;
     private final JwtComponent jwtComponent;
-    public LoginFilter(AuthenticationManager authenticationManager, JwtComponent jwtComponent) {
+    private final RefreshTokenService refreshTokenService;
+    public LoginFilter(AuthenticationManager authenticationManager, JwtComponent jwtComponent, RefreshTokenService refreshTokenService) {
         this.authenticationManager = authenticationManager;
         this.jwtComponent = jwtComponent;
+        this.refreshTokenService = refreshTokenService;
     }
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
@@ -46,7 +48,8 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     //로그인 성공시 실행하는 메소드 (여기서 JWT를 발급하면 됨)
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
+            Authentication authentication) {
         log.trace("authentication.getName() = [{}]", authentication.getName());
 
         CustomUserDetails customUserDetails = (CustomUserDetails)authentication.getPrincipal();
@@ -54,7 +57,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         log.trace("customUserDetails        = [{}]", customUserDetails);
 
         String username = customUserDetails.getUsername();
-        String role    = "";
+        String role     = null;
 
         log.trace("username                 = [{}]", username);
         log.trace("1 role                   = [{}]", role);
@@ -69,21 +72,31 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
         log.trace("2 role                   = [{}]", role);
 
-        // 36000 / 1000 -> 36초? 30000
-        String token = jwtComponent.createJwt(username, role, 60*60*10L);
+        // 36000 / 1000 -> 36초?
+        // 10분 10분 * 60초 * 1000 밀리초 = 600000
+        String accessToken  = this.jwtComponent.createJwtAccess(username, role);
+        // 24시간 24시간 * 60분 * 60초 * 1000 밀리초 = 86400000
+        String refreshToken = this.jwtComponent.createJwtAccess(username, role);
 
-        HttpHeaders header = new HttpHeaders();
-        header.setBearerAuth(token);
+        log.trace("accessToken               = [{}]", accessToken);
+        log.trace("refreshToken              = [{}]", refreshToken);
 
-        log.trace("token                     = [{}]", token);
+        //Refresh 토큰 저장
+        this.refreshTokenService.saveRefreshToken(username, refreshToken);
 
-        response.setHeader(HttpHeaders.AUTHORIZATION, header.getFirst(HttpHeaders.AUTHORIZATION));
+        /**
+         * access token은 header (localStorge) 저장
+         * refresh token은 cookie에 저장
+         */
+        response.setHeader(this.jwtComponent.getKeyAccess(), accessToken);
+        response.addCookie(this.jwtComponent.createCookie(refreshToken));
+        response.setStatus(HttpStatus.OK.value());
     }
 
     //로그인 실패시 실행하는 메소드
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) {
         log.trace("unsuccessful");
-        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     }
 }

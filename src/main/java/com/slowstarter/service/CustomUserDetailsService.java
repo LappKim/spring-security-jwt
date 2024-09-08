@@ -13,24 +13,18 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-public class CustomUserDetailsService implements UserDetailsService
-{
+public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
-    public CustomUserDetailsService(UserRepository userRepository)
-    {
-        super();
+    public CustomUserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
-
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException
-    {
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserEntity userEntity = userRepository.findByUsername(username);
 
         log.trace("UserEntity -> [{}]", userEntity);
 
-        if(userEntity != null)
-        {
+        if(userEntity != null) {
             return new CustomUserDetails(userEntity);
         }
 
