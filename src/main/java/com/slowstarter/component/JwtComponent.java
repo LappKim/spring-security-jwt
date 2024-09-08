@@ -68,8 +68,9 @@ public class JwtComponent {
                 .compact();
     }
     public Cookie createCookie(String refreshToken) {
+        int maxAge = getRefreshExpired()/1000; // milisecond를 second로 변환
         Cookie cookie = new Cookie(getKeyRefresh(), refreshToken);
-        cookie.setMaxAge(getRefreshExpired());
+        cookie.setMaxAge(maxAge);
         // cookie.setSecure(true); //https 사용시
         // cookie.setPath("/");    //cookie 동작 위치!
         cookie.setHttpOnly(true);
