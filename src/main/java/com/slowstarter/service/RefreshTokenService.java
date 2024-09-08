@@ -3,6 +3,7 @@ package com.slowstarter.service;
 import java.util.Date;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.slowstarter.component.JwtComponent;
 import com.slowstarter.entity.RefreshTokenEntity;
@@ -24,6 +25,7 @@ public class RefreshTokenService {
         refreshTokenEntity.setExpiration(new Date(System.currentTimeMillis() + expiredMs).toString());
         this.refreshTokenRepository.save(refreshTokenEntity);
     }
+    @Transactional
     public void deleteByRefreshToken(String refreshToken) {
         this.refreshTokenRepository.deleteByRefreshToken(refreshToken);
     }
