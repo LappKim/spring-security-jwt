@@ -30,6 +30,9 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        log.trace("JwtFilter(OncePerRequestFilter) start!!!!!!");
+
+
         String access = this.jwtComponent.getKeyAccess();
         //request에서 access 헤더를 찾음
         String accessToken = request.getHeader(access);
