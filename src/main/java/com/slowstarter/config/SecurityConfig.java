@@ -37,8 +37,8 @@ public class SecurityConfig {
 
     //AuthenticationManager Bean 등록
     @Bean
-    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
-        return configuration.getAuthenticationManager();
+    AuthenticationManager authenticationManager() throws Exception {
+        return this.authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
@@ -51,18 +51,18 @@ public class SecurityConfig {
         // cors 설정
         httpSecurity
             .cors( (customizer) ->
-                customizer.configurationSource(( request ) -> {
-                    CorsConfiguration configuration = new CorsConfiguration();
+                customizer
+                    .configurationSource(( request ) -> {
+                        CorsConfiguration configuration = new CorsConfiguration();
+                        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:3001"));
+                        configuration.setAllowedMethods(Collections.singletonList("*"));
+                        configuration.setAllowCredentials(true);
+                        configuration.setAllowedHeaders(Collections.singletonList("*"));
+                        configuration.setMaxAge(3600L);
+                        configuration.setExposedHeaders(Collections.singletonList("Authorization"));
 
-                    configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:3001"));
-                    configuration.setAllowedMethods(Collections.singletonList("*"));
-                    configuration.setAllowCredentials(true);
-                    configuration.setAllowedHeaders(Collections.singletonList("*"));
-                    configuration.setMaxAge(3600L);
-                    configuration.setExposedHeaders(Collections.singletonList("Authorization"));
-
-                    return configuration;
-                })
+                        return configuration;
+                    })
             );
 
         //csrf disable
@@ -80,9 +80,11 @@ public class SecurityConfig {
         //경로별 인가 작업
         httpSecurity
             .authorizeHttpRequests( (customizer) ->
-                customizer.requestMatchers("/", "/reissue", "/login", "/join").permitAll()
-                          .requestMatchers("/admin").hasRole("ADMIN")
-                          .anyRequest().authenticated());
+                customizer
+                    .requestMatchers("/", "/reissue", "/login", "/join").permitAll()
+                    .requestMatchers("/admin").hasRole("ADMIN")
+                    .anyRequest().authenticated()
+            );
 
         // JwtFilter 로그인 이후 접속에 대한 token 확인 후 인증
         httpSecurity
@@ -90,7 +92,7 @@ public class SecurityConfig {
 
         //필터 추가 LoginFilter()는 인자를 받음 (AuthenticationManager() 메소드에 authenticationConfiguration 객체를 넣어야 함) 따라서 등록 필요
         httpSecurity
-            .addFilterAt(new LoginFilter(this.authenticationManager(this.authenticationConfiguration), this.jwtComponent, this.refreshTokenService), UsernamePasswordAuthenticationFilter.class);
+            .addFilterAt(new LoginFilter(this.authenticationManager(), this.jwtComponent, this.refreshTokenService), UsernamePasswordAuthenticationFilter.class);
 
         // JwtFilter 로그인 이후 접속에 대한 token 확인 후 인증
         httpSecurity
@@ -99,7 +101,9 @@ public class SecurityConfig {
         //세션 설정
         httpSecurity
             .sessionManagement( (customizer) ->
-                customizer.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                customizer
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            );
 
         return httpSecurity.build();
     }
