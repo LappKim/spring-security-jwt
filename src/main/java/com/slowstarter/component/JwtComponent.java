@@ -19,11 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 public class JwtComponent {
     private static final String JWT_USERNAME                   = "username";
     private static final String JWT_ROLE                       = "role";
+
     private static final String JWT_CATEGORY                   = "category";
     private static final String JWT_ACCESS                     = "access";
     private static final String JWT_REFRESH                    = "refresh";
-    private static final int    JWT_ACCESS_EXPIRED_MILISECOND  = 1800000;  // 30분
-    private static final int    JWT_REFRESH_EXPIRED_MILISECOND = 86400000; // 24시간
+
+    private static final long   JWT_ACCESS_EXPIRED_MILISECOND  = 1800000;  // 30분
+    private static final long   JWT_REFRESH_EXPIRED_MILISECOND = 86400000; // 24시간
 
     private SecretKey secretKey;
 
@@ -46,10 +48,10 @@ public class JwtComponent {
         return getPayload(token).getExpiration().before(new Date());
     }
     public String createJwtAccess(String username, String role) {
-        return createJwtImpl(getKeyAccess(), username, role, (long)getAccessExpired());
+        return createJwtImpl(getKeyAccess(), username, role, getAccessExpired());
     }
     public String createJwtRefresh(String username, String role) {
-        return createJwtImpl(getKeyRefresh(), username, role, (long)getRefreshExpired());
+        return createJwtImpl(getKeyRefresh(), username, role, getRefreshExpired());
     }
     private String createJwtImpl(String category, String username, String role, Long expiredMs) {
         Date issuedAt   = new Date(System.currentTimeMillis());
@@ -68,19 +70,19 @@ public class JwtComponent {
                 .compact();
     }
     public Cookie createCookie(String refreshToken) {
-        int maxAge = getRefreshExpired()/1000; // milisecond를 second로 변환
+        int maxAge = (int)getRefreshExpired()/1000; // milisecond를 second로 변환
         Cookie cookie = new Cookie(getKeyRefresh(), refreshToken);
         cookie.setMaxAge(maxAge);
-        // cookie.setSecure(true); //https 사용시
-        // cookie.setPath("/");    //cookie 동작 위치!
+        cookie.setSecure(true); //https 사용시
+        cookie.setPath("/");    //cookie 동작 위치!
         cookie.setHttpOnly(true);
         return cookie;
     }
     public Cookie removeCookie() {
         Cookie cookie = new Cookie(getKeyRefresh(), null);
         cookie.setMaxAge(0);
-        // cookie.setSecure(true); //https 사용시
-        // cookie.setPath("/");    //cookie 동작 위치!
+        cookie.setSecure(true); //https 사용시
+        cookie.setPath("/");    //cookie 동작 위치!
         cookie.setHttpOnly(true);
         return cookie;
     }
@@ -107,10 +109,10 @@ public class JwtComponent {
     public String getKeyRefresh() {
         return JWT_REFRESH;
     }
-    public int getAccessExpired() {
+    public long getAccessExpired() {
         return JWT_ACCESS_EXPIRED_MILISECOND;
     }
-    public int getRefreshExpired() {
+    public long getRefreshExpired() {
         return JWT_REFRESH_EXPIRED_MILISECOND;
     }
 }

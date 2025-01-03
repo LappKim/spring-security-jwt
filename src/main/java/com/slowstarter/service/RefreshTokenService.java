@@ -18,7 +18,7 @@ public class RefreshTokenService {
         this.jwtComponent = jwtComponent;
     }
     public void saveRefreshToken(String username, String refreshToken) {
-        int expiredMs = this.jwtComponent.getRefreshExpired();
+        int expiredMs = (int)this.jwtComponent.getRefreshExpired();
         RefreshTokenEntity refreshTokenEntity = new RefreshTokenEntity();
         refreshTokenEntity.setUsername(username);
         refreshTokenEntity.setRefreshToken(refreshToken);
